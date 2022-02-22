@@ -104,7 +104,7 @@ def remonte_max(driver, personne):
                                         "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//time[@dir='auto']")
 
             date = date.get_attribute("datetime")
-            date = datetime.datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%f0Z')
+            date = datetime.datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%fZ')
             date = date + datetime.timedelta(hours=1)
 
             id = int(date.strftime('%Y%m%d%H%M%S%f'))
@@ -120,7 +120,7 @@ def remonte_max(driver, personne):
                 expediteur = ''
 
             image = ''
-            heur = date.strftime('%Y-%m-%d_%H-%M-%S')
+            heur = date.strftime('%Y-%m-%d_%H:%M:%S.%f')
             image_path = r'imgTeams'
 
             with sqlite3.connect('bdd.db') as conn:
