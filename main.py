@@ -103,8 +103,10 @@ def remonte_max(driver, personne):
             date = message.find_element(By.XPATH,
                                         "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//time[@dir='auto']")
 
-            date = date.get_attribute("datetime")
-            date = datetime.datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%fZ')
+            date = date.get_attribute("datetime").split('.')
+            date[1] = date[1][:1]
+            date = '.'.join(date)
+            date = datetime.datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%f')
             date = date + datetime.timedelta(hours=1)
 
             id = int(date.strftime('%Y%m%d%H%M%S%f'))
