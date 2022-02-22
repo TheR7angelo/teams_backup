@@ -84,6 +84,13 @@ def get_file_content_chrome(driver, uri):
 
 
 def remonte_max(driver, personne):
+
+    def heur_mili(text: str):
+        text = text.split('.')
+        text[1] = text[1][:1]
+        text = '.'.join(text)
+        return text
+
     driver.switch_to.frame(
         driver.find_element(By.XPATH, "//iframe[@class='embedded-electron-webview embedded-page-content']"))
 
@@ -103,11 +110,14 @@ def remonte_max(driver, personne):
             date = message.find_element(By.XPATH,
                                         "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//time[@dir='auto']")
 
-            date = date.get_attribute("datetime").split('.')
-            date[1] = date[1][:1]
-            date = '.'.join(date)
-            date = datetime.datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%f')
-            date = date + datetime.timedelta(hours=1)
+            # date = date.get_attribute("datetime").split('.')
+            # date[1] = date[1][:1]
+            # date = '.'.join(date)
+            # date = datetime.datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%f')
+            # date = date + datetime.timedelta(hours=1)
+
+            date = heur_mili(date.get_attribute("datetime"))
+            date = datetime.datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%f') + datetime.timedelta(hours=1)
 
             id = int(date.strftime('%Y%m%d%H%M%S%f'))
 
@@ -119,10 +129,23 @@ def remonte_max(driver, personne):
                 # txt = message.find_element(By.XPATH, "//div[@dir='auto']//p")
                 txt = message.get_attribute("innerText")
             except:
-                expediteur = ''
+                txt = ''
+
+            try:
+                reaction = message.find_element(By.XPATH,
+                                        "./parent::div/parent::div/parent::div//div[@class='ui-reactions aui ey bo ui-chat__message__reactions']//img")
+            except:
+                reaction = ''
 
             image = ''
-            heur = date.strftime('%Y-%m-%d_%H:%M:%S.%f')
+
+
+            # heur = date.strftime('%d-%m-%Y_%H:%M:%S.%f').split('.')
+            # heur[1] = heur[1][:1]
+            # heur = '.'.join(heur)
+
+            heur = heur_mili(date.strftime('%d-%m-%Y_%H:%M:%S.%f'))
+
             image_path = r'imgTeams'
 
             with sqlite3.connect('bdd.db') as conn:
@@ -130,17 +153,16 @@ def remonte_max(driver, personne):
 
                 cursor.execute(f'''
                                 CREATE TABLE IF NOT EXISTS "{personne}"
-                                (id REAL PRIMARY KEY, expediteur TEXT, message TEXT, image_path TEXT, image TEXT, heur TEXT)
+                                (id REAL PRIMARY KEY, expediteur TEXT, message TEXT, reaction TEXT, image_path TEXT, image TEXT, heur TEXT)
                                 ''')
                 conn.commit()
 
                 command = f'''
-                        INSERT or REPLACE INTO '{personne}' (id, expediteur, message, image_path, image, heur) values
-                        ({id}, "{expediteur}", "{txt}", "{image_path}", "{image}", "{heur}")
+                        INSERT or REPLACE INTO '{personne}' (id, expediteur, message, reaction, image_path, image, heur) values
+                        ({id}, "{expediteur}", "{txt}", "{reaction}", "{image_path}", "{image}", "{heur}")
                         '''
                 cursor.execute(command)
                 conn.commit()
-            del id, txt, image_path, image, heur
 
         element = elements[0]
 
