@@ -131,11 +131,14 @@ def remonte_max(driver, personne):
             except:
                 txt = ''
 
-            try:
-                reaction = message.find_element(By.XPATH,
-                                        "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//div[@class='ui-reactions aui ey bo ui-chat__message__reactions']//img")
-            except:
-                reaction = ''
+            reaction = []
+            reactions = message.find_elements(By.XPATH,
+                                    "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//div[starts-with(@class, 'ui-reactions')]")
+            for react in reactions:
+                tmp = [react.get_attribute("innerText"), react.get_attribute('alt')]
+                tmp = '*'.join(tmp)
+                reaction.append(tmp[:])
+            reaction = ';'.join(reaction)
 
             image = ''
 
