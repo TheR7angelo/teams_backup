@@ -133,7 +133,7 @@ def remonte_max(driver, personne):
 
             try:
                 reaction = message.find_element(By.XPATH,
-                                        "./parent::div/parent::div/parent::div//div[@class='ui-reactions aui ey bo ui-chat__message__reactions']//img")
+                                        "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//div[@class='ui-reactions aui ey bo ui-chat__message__reactions']//img")
             except:
                 reaction = ''
 
