@@ -109,17 +109,19 @@ def remonte_max(driver, personne):
 
             id = int(date.strftime('%Y%m%d%H%M%S%f'))
 
+            expediteur = message.find_element(By.XPATH,
+                                        "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//span[@dir='auto']")
+            expediteur = expediteur.get_attribute("innerText")
+
             try:
                 # txt = message.find_element(By.XPATH, "//div[@dir='auto']//p")
-                expediteur = message.text
                 txt = message.get_attribute("innerText")
             except:
                 expediteur = ''
-                txt = ''
 
             image = ''
             heur = date.strftime('%Y-%m-%d_%H-%M-%S')
-            image_path = ''
+            image_path = r'imgTeams'
 
             with sqlite3.connect('bdd.db') as conn:
                 cursor = conn.cursor()
