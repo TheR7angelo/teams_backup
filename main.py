@@ -117,33 +117,41 @@ def remonte_max(driver, personne):
     while True:
 
         for message in elements:
+
+            '''
+            Obtention de la date du message qui servira à généré un identifiant unique
+            '''
+
             date = message.find_element(By.XPATH,
                                         "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//time[@dir='auto']")
-
-            # date = date.get_attribute("datetime").split('.')
-            # date[1] = date[1][:1]
-            # date = '.'.join(date)
-            # date = datetime.datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%f')
-            # date = date + datetime.timedelta(hours=1)
 
             date = heur_mili(date.get_attribute("datetime"))
             date = datetime.datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%f') + datetime.timedelta(hours=1)
 
             id = int(date.strftime('%Y%m%d%H%M%S%f'))
 
+            '''
+            Obetention du nom de la personne qui à envoyer le message
+            '''
             expediteur = message.find_element(By.XPATH,
                                         "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//span[@dir='auto']")
             expediteur = expediteur.get_attribute("innerText")
 
+            '''
+            Si le message comprend du texte alors on le prend sinon on met une varible vide
+            '''
             try:
                 # txt = message.find_element(By.XPATH, "//div[@dir='auto']//p")
                 txt = message.get_attribute("innerText")
             except:
                 txt = ''
 
-            # if txt == 'aie aie aie':
-            #     print('h')
+            if txt == 'et me partager la date experiation licence comac':
+                print('h')
 
+            '''
+            Si le message comprend des réations ont les prends autrement on met la variable à vide
+            '''
             reaction = []
             reactions = message.find_elements(By.XPATH,
                                     "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//div[starts-with(@class, 'ui-reactions')]//span[starts-with(@class, 'ui-text')]")
@@ -161,17 +169,29 @@ def remonte_max(driver, personne):
                 del tmp
             reaction = ';'.join(reaction)
 
-            image = ''
+            '''
+            Si le message comprend une image alors on la prend, la convertit en fichier binaire puis l'enregistre
+            sous les deux format, binaire et fichier
+            '''
 
-
-            # heur = date.strftime('%d-%m-%Y_%H:%M:%S.%f').split('.')
-            # heur[1] = heur[1][:1]
-            # heur = '.'.join(heur)
-
-            heur = heur_mili(date.strftime('%d-%m-%Y_%H:%M:%S.%f'))
-
+            # image = message.find_elements(By.XPATH,
+            #                               "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//div[starts-with(@class, 'ui-reactions')]//span[starts-with(@class, 'ui-text')]")
+            images = message.find_elements(By.XPATH,
+                                          "./parent::div/parent::div/parent::div//div[starts-with(@class, 'ui-box')]//img//img")
+            for img in images:
+                print(img)
+                src = img.get_attribute("src")
+                src = get_file_content_chrome(driver, src)
             image_path = r'imgTeams'
 
+            '''
+            Obtention de la date d'envoie du message
+            '''
+            heur = heur_mili(date.strftime('%d-%m-%Y_%H:%M:%S.%f'))
+
+            '''
+            Enregistrement de toutes les informations généré dans la base de donnée
+            '''
             with sqlite3.connect('bdd.db') as conn:
                 cursor = conn.cursor()
 
