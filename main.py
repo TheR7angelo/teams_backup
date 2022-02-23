@@ -1,4 +1,5 @@
 import datetime
+import json
 
 import os
 import threading
@@ -6,6 +7,7 @@ import time
 import base64
 import sqlite3
 
+import selenium.webdriver
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
@@ -104,6 +106,14 @@ def remonte_max(driver, personne):
     loop = 1
     elements = driver.find_elements(By.XPATH, Xpath)
 
+    emojy = {'like': '👍',
+             'heart': '❤',
+             'laugh': '😀',
+             'surprised': '😯',
+             'sad': '😢',
+             'angryface': '😠'
+             }
+
     while True:
 
         for message in elements:
@@ -131,13 +141,24 @@ def remonte_max(driver, personne):
             except:
                 txt = ''
 
+            # if txt == 'aie aie aie':
+            #     print('h')
+
             reaction = []
             reactions = message.find_elements(By.XPATH,
-                                    "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//div[starts-with(@class, 'ui-reactions')]")
+                                    "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//div[starts-with(@class, 'ui-reactions')]//span[starts-with(@class, 'ui-text')]")
             for react in reactions:
-                tmp = [react.get_attribute("innerText"), react.get_attribute('alt')]
+
+                # attrs = []
+                # for attr in react.get_property('attributes'):
+                #     attrs.append([attr['name'], attr['value']])
+
+                tmp = [react.get_attribute('title'), react.get_attribute('data-tid').split('-')[0]]
+
+                tmp[1] = emojy[tmp[1]]
                 tmp = '*'.join(tmp)
                 reaction.append(tmp[:])
+                del tmp
             reaction = ';'.join(reaction)
 
             image = ''
