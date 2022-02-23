@@ -113,7 +113,7 @@ def remonte_max(driver, personne):
              'laugh': '😀',
              'surprised': '😯',
              'sad': '😢',
-             'angryface': '😠'
+             'angry': '😠'
              }
 
     while True:
@@ -161,6 +161,9 @@ def remonte_max(driver, personne):
                 #     attrs.append([attr['name'], attr['value']])
 
                 tmp = [react.get_attribute('title'), react.get_attribute('data-tid').split('-')[0]]
+
+                if tmp[1] == 'heart':
+                    print('hey')
 
                 tmp[1] = emojy[tmp[1]]
                 tmp = '*'.join(tmp)
