@@ -102,8 +102,8 @@ def remonte_max(driver, personne):
 
     print('go')
 
-    # Xpath = "//ul[@aria-label='Contenu de la conversation']//li[@data-tid='chat-pane-item']//p"  # [@data-tid='chat-pane-item']"
-    Xpath = "//ul[@aria-label='Contenu de la conversation']//li[@data-tid='chat-pane-item']"
+    Xpath = "//ul[@aria-label='Contenu de la conversation']//li[@data-tid='chat-pane-item']//p"  # [@data-tid='chat-pane-item']"
+    # Xpath = "//ul[@aria-label='Contenu de la conversation']//li[@data-tid='chat-pane-item']"
 
     break_point = 0
     loop = 1
@@ -118,16 +118,15 @@ def remonte_max(driver, personne):
              }
 
     while True:
-
         for message in elements:
             try:
                 '''
                 Obtention de la date du message qui servira à généré un identifiant unique
                 '''
-                # date = message.find_element(By.XPATH,
-                #                             "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//time[@dir='auto']")
                 date = message.find_element(By.XPATH,
-                                            "//div[@class='ui-chat__messageheader']//time[@dir='auto']")
+                                            "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//time[@dir='auto']")
+                # date = message.find_element(By.XPATH,
+                #                             "//div[@class='ui-chat__messageheader']//time[@dir='auto']")
 
                 date = heur_mili(date.get_attribute("datetime"))
                 date = datetime.datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%f') + datetime.timedelta(hours=1)
@@ -135,34 +134,31 @@ def remonte_max(driver, personne):
                 id = int(date.strftime('%Y%m%d%H%M%S%f'))
 
                 '''
-                Obetention du nom de la personne qui à envoyer le message
+                Obtention du nom de la personne qui à envoyer le message
                 '''
-                # expediteur = message.find_element(By.XPATH,
-                #                                   "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//span[@dir='auto']")
                 expediteur = message.find_element(By.XPATH,
-                                                  "//div[@class='ui-chat__messageheader']//span[@dir='auto']")
+                                                  "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//span[@dir='auto']")
+                # expediteur = message.find_element(By.XPATH,
+                #                                   "//div[@class='ui-chat__messageheader']//span[@dir='auto']")
                 expediteur = expediteur.get_attribute("innerText")
 
                 '''
                 Si le message comprend du texte alors on le prend sinon on met une varible vide
                 '''
                 try:
-                    txt = message.find_element(By.XPATH, '//p')
-                    txt = txt.get_attribute("innerText")
+                    # txt = message.find_element(By.XPATH, '//p')
+                    txt = message.get_attribute("innerText")
                 except:
                     txt = ''
-
-                if txt == 'et me partager la date experiation licence comac' or txt == 'pourquoi donc ?':
-                    print('h')
 
                 '''
                 Si le message comprend des réations ont les prends autrement on met la variable à vide
                 '''
                 reaction = []
-                # reactions = message.find_elements(By.XPATH,
-                #                                   "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//div[starts-with(@class, 'ui-reactions')]//span[starts-with(@class, 'ui-text')]")
                 reactions = message.find_elements(By.XPATH,
-                                                  "//div[@class='ui-chat__messageheader']//div[starts-with(@class, 'ui-reactions')]//span[starts-with(@class, 'ui-text')]")
+                                                  "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//div[starts-with(@class, 'ui-reactions')]//span[starts-with(@class, 'ui-text')]")
+                # reactions = message.find_elements(By.XPATH,
+                #                                   "//div[@class='ui-chat__messageheader']//div[starts-with(@class, 'ui-reactions')]//span[starts-with(@class, 'ui-text')]")
                 for react in reactions:
                     # attrs = []
                     # for attr in react.get_property('attributes'):
@@ -170,8 +166,8 @@ def remonte_max(driver, personne):
 
                     tmp = [react.get_attribute('title'), react.get_attribute('data-tid').split('-')[0]]
 
-                    if tmp[1] == 'heart':
-                        print('hey')
+                    # if tmp[1] == 'heart':
+                    #     print('hey')
 
                     tmp[1] = emojy[tmp[1]]
                     tmp = '*'.join(tmp)
@@ -185,8 +181,8 @@ def remonte_max(driver, personne):
                 '''
                 image = []
                 try:
-                    # images = message.find_elements(By.XPATH, "./parent::div/parent::div/parent::div//div[@dir='auto']//img")
-                    images = message.find_elements(By.XPATH, "//div[@dir='auto']//img")
+                    images = message.find_elements(By.XPATH, "./parent::div/parent::div/parent::div//div[@dir='auto']//img")
+                    # images = message.find_elements(By.XPATH, "//div[@dir='auto']//img")
                     for img in images:
                         link = img.get_attribute("src")
                         src = get_file_content_chrome(driver, link)
@@ -202,19 +198,19 @@ def remonte_max(driver, personne):
                 except:
                     pass
 
-                tableau = []
-                try:
-                    # tableaux = message.find_elements(By.XPATH, "./parent::div/parent::div/parent::div//div[@dir='auto']//table")
-                    tableaux = message.find_elements(By.XPATH, "//div[@dir='auto']//table")
-                    for tab in tableaux:
-                        os.makedirs('imgTeams', exist_ok=True)
-                        file = f'imgTeams\\{str(id)}_tableau.png'
-                        tab.screenshot(file)
-                        tableau.append(file)
-                except:
-                    pass
+                # tableau = []
+                # try:
+                #     # tableaux = message.find_elements(By.XPATH, "./parent::div/parent::div/parent::div//div[@dir='auto']//table")
+                #     tableaux = message.find_elements(By.XPATH, "//div[@dir='auto']//table")
+                #     for tab in tableaux:
+                #         os.makedirs('imgTeams', exist_ok=True)
+                #         file = f'imgTeams\\{str(id)}_tableau.png'
+                #         tab.screenshot(file)
+                #         tableau.append(file)
+                # except:
+                #     pass
 
-                image_path = image + tableau
+                image_path = image # + tableau
                 image_path = ';'.join(image_path)
 
                 '''
