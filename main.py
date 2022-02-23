@@ -16,6 +16,9 @@ from selenium.common.exceptions import StaleElementReferenceException
 
 from win32com.client import Dispatch
 
+from fonction import *
+
+
 # dead line 30 juin 2022
 
 def get_version_via_com(filename):
@@ -86,7 +89,6 @@ def get_file_content_chrome(driver, uri):
 
 
 def remonte_max(driver, personne):
-
     def heur_mili(text: str):
         text = text.split('.')
         text[1] = text[1][:1]
@@ -100,7 +102,7 @@ def remonte_max(driver, personne):
 
     print('go')
 
-    Xpath = "//ul[@aria-label='Contenu de la conversation']//li[@data-tid='chat-pane-item']//p" #[@data-tid='chat-pane-item']"
+    Xpath = "//ul[@aria-label='Contenu de la conversation']//li[@data-tid='chat-pane-item']//p"  # [@data-tid='chat-pane-item']"
 
     break_point = 0
     loop = 1
@@ -121,7 +123,6 @@ def remonte_max(driver, personne):
             '''
             Obtention de la date du message qui servira à généré un identifiant unique
             '''
-
             date = message.find_element(By.XPATH,
                                         "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//time[@dir='auto']")
 
@@ -134,19 +135,18 @@ def remonte_max(driver, personne):
             Obetention du nom de la personne qui à envoyer le message
             '''
             expediteur = message.find_element(By.XPATH,
-                                        "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//span[@dir='auto']")
+                                              "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//span[@dir='auto']")
             expediteur = expediteur.get_attribute("innerText")
 
             '''
             Si le message comprend du texte alors on le prend sinon on met une varible vide
             '''
             try:
-                # txt = message.find_element(By.XPATH, "//div[@dir='auto']//p")
                 txt = message.get_attribute("innerText")
             except:
                 txt = ''
 
-            if txt == 'et me partager la date experiation licence comac':
+            if txt == 'et me partager la date experiation licence comac' or txt == 'pourquoi donc ?':
                 print('h')
 
             '''
@@ -154,9 +154,8 @@ def remonte_max(driver, personne):
             '''
             reaction = []
             reactions = message.find_elements(By.XPATH,
-                                    "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//div[starts-with(@class, 'ui-reactions')]//span[starts-with(@class, 'ui-text')]")
+                                              "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//div[starts-with(@class, 'ui-reactions')]//span[starts-with(@class, 'ui-text')]")
             for react in reactions:
-
                 # attrs = []
                 # for attr in react.get_property('attributes'):
                 #     attrs.append([attr['name'], attr['value']])
@@ -173,16 +172,29 @@ def remonte_max(driver, personne):
             Si le message comprend une image alors on la prend, la convertit en fichier binaire puis l'enregistre
             sous les deux format, binaire et fichier
             '''
-
-            # image = message.find_elements(By.XPATH,
-            #                               "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//div[starts-with(@class, 'ui-reactions')]//span[starts-with(@class, 'ui-text')]")
-            images = message.find_elements(By.XPATH,
-                                          "./parent::div/parent::div/parent::div//div[starts-with(@class, 'ui-box')]//img//img")
+            images = message.find_elements(By.XPATH, "./parent::div/parent::div/parent::div//div[@dir='auto']//img")
+            image = []
             for img in images:
-                print(img)
-                src = img.get_attribute("src")
-                src = get_file_content_chrome(driver, src)
-            image_path = r'imgTeams'
+                link = img.get_attribute("src")
+                src = get_file_content_chrome(driver, link)
+                file = [str(id), get_ext_from_byte(src)]
+                file = '.'.join(file)
+
+                os.makedirs('imgTeams', exist_ok=True)
+                file_link = f'imgTeams\\{file}'
+                image.append(file_link)
+                with open(file_link, 'wb') as outfile:
+                    outfile.write(src)
+            # image_path = ';'.join(image)
+
+            tableaux = message.find_elements(By.XPATH, "./parent::div/parent::div/parent::div//div[@dir='auto']//table")
+            tableau = []
+            for tab in tableaux:
+                file = f'{str(id)}_tableau.png'
+                tab.screenshot(file)
+                tableau.append(file)
+            image_path = image + tableau
+            image_path = ';'.join(image_path)
 
             '''
             Obtention de la date d'envoie du message
@@ -197,13 +209,13 @@ def remonte_max(driver, personne):
 
                 cursor.execute(f'''
                                 CREATE TABLE IF NOT EXISTS "{personne}"
-                                (id REAL PRIMARY KEY, expediteur TEXT, message TEXT, reaction TEXT, image_path TEXT, image TEXT, heur TEXT)
+                                (id REAL PRIMARY KEY, expediteur TEXT, message TEXT, reaction TEXT, image_path TEXT, heur TEXT)
                                 ''')
                 conn.commit()
 
                 command = f'''
-                        INSERT or REPLACE INTO '{personne}' (id, expediteur, message, reaction, image_path, image, heur) values
-                        ({id}, "{expediteur}", "{txt}", "{reaction}", "{image_path}", "{image}", "{heur}")
+                        INSERT or REPLACE INTO '{personne}' (id, expediteur, message, reaction, image_path, heur) values
+                        ({id}, "{expediteur}", "{txt}", "{reaction}", "{image_path}", "{heur}")
                         '''
                 cursor.execute(command)
                 conn.commit()
@@ -286,7 +298,8 @@ for conversation in conversations:
     # messages = driver.find_elements(By.XPATH, "//ul[@aria-label='Contenu de la conversation']/li[@data-tid='chat-pane-item']//p")
     # Xpath = "//ul[@aria-label='Contenu de la conversation']/li[@data-tid='chat-pane-item']"
     messages = remonte_max(
-        driver=driver, personne=personne)  # "//ul[@aria-label='Contenu de la conversation']/li[@data-tid='chat-pane-item//p']"
+        driver=driver,
+        personne=personne)  # "//ul[@aria-label='Contenu de la conversation']/li[@data-tid='chat-pane-item//p']"
     # save_message(driver=driver, personne=personne)
 
     # for index, message in enumerate(messages):
