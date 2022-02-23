@@ -102,7 +102,8 @@ def remonte_max(driver, personne):
 
     print('go')
 
-    Xpath = "//ul[@aria-label='Contenu de la conversation']//li[@data-tid='chat-pane-item']//p"  # [@data-tid='chat-pane-item']"
+    # Xpath = "//ul[@aria-label='Contenu de la conversation']//li[@data-tid='chat-pane-item']//p"  # [@data-tid='chat-pane-item']"
+    Xpath = "//ul[@aria-label='Contenu de la conversation']//li[@data-tid='chat-pane-item']"
 
     break_point = 0
     loop = 1
@@ -119,109 +120,129 @@ def remonte_max(driver, personne):
     while True:
 
         for message in elements:
-
-            '''
-            Obtention de la date du message qui servira à généré un identifiant unique
-            '''
-            date = message.find_element(By.XPATH,
-                                        "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//time[@dir='auto']")
-
-            date = heur_mili(date.get_attribute("datetime"))
-            date = datetime.datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%f') + datetime.timedelta(hours=1)
-
-            id = int(date.strftime('%Y%m%d%H%M%S%f'))
-
-            '''
-            Obetention du nom de la personne qui à envoyer le message
-            '''
-            expediteur = message.find_element(By.XPATH,
-                                              "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//span[@dir='auto']")
-            expediteur = expediteur.get_attribute("innerText")
-
-            '''
-            Si le message comprend du texte alors on le prend sinon on met une varible vide
-            '''
             try:
-                txt = message.get_attribute("innerText")
+                '''
+                Obtention de la date du message qui servira à généré un identifiant unique
+                '''
+                # date = message.find_element(By.XPATH,
+                #                             "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//time[@dir='auto']")
+                date = message.find_element(By.XPATH,
+                                            "//div[@class='ui-chat__messageheader']//time[@dir='auto']")
+
+                date = heur_mili(date.get_attribute("datetime"))
+                date = datetime.datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%f') + datetime.timedelta(hours=1)
+
+                id = int(date.strftime('%Y%m%d%H%M%S%f'))
+
+                '''
+                Obetention du nom de la personne qui à envoyer le message
+                '''
+                # expediteur = message.find_element(By.XPATH,
+                #                                   "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//span[@dir='auto']")
+                expediteur = message.find_element(By.XPATH,
+                                                  "//div[@class='ui-chat__messageheader']//span[@dir='auto']")
+                expediteur = expediteur.get_attribute("innerText")
+
+                '''
+                Si le message comprend du texte alors on le prend sinon on met une varible vide
+                '''
+                try:
+                    txt = message.find_element(By.XPATH, '//p')
+                    txt = txt.get_attribute("innerText")
+                except:
+                    txt = ''
+
+                if txt == 'et me partager la date experiation licence comac' or txt == 'pourquoi donc ?':
+                    print('h')
+
+                '''
+                Si le message comprend des réations ont les prends autrement on met la variable à vide
+                '''
+                reaction = []
+                # reactions = message.find_elements(By.XPATH,
+                #                                   "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//div[starts-with(@class, 'ui-reactions')]//span[starts-with(@class, 'ui-text')]")
+                reactions = message.find_elements(By.XPATH,
+                                                  "//div[@class='ui-chat__messageheader']//div[starts-with(@class, 'ui-reactions')]//span[starts-with(@class, 'ui-text')]")
+                for react in reactions:
+                    # attrs = []
+                    # for attr in react.get_property('attributes'):
+                    #     attrs.append([attr['name'], attr['value']])
+
+                    tmp = [react.get_attribute('title'), react.get_attribute('data-tid').split('-')[0]]
+
+                    if tmp[1] == 'heart':
+                        print('hey')
+
+                    tmp[1] = emojy[tmp[1]]
+                    tmp = '*'.join(tmp)
+                    reaction.append(tmp[:])
+                    del tmp
+                reaction = ';'.join(reaction)
+
+                '''
+                Si le message comprend une image alors on la prend, la convertit en fichier binaire puis l'enregistre
+                sous les deux format, binaire et fichier
+                '''
+                image = []
+                try:
+                    # images = message.find_elements(By.XPATH, "./parent::div/parent::div/parent::div//div[@dir='auto']//img")
+                    images = message.find_elements(By.XPATH, "//div[@dir='auto']//img")
+                    for img in images:
+                        link = img.get_attribute("src")
+                        src = get_file_content_chrome(driver, link)
+                        file = [str(id), get_ext_from_byte(src)]
+                        file = '.'.join(file)
+
+                        os.makedirs('imgTeams', exist_ok=True)
+                        file_link = f'imgTeams\\{file}'
+                        image.append(file_link)
+                        with open(file_link, 'wb') as outfile:
+                            outfile.write(src)
+                    # image_path = ';'.join(image)
+                except:
+                    pass
+
+                tableau = []
+                try:
+                    # tableaux = message.find_elements(By.XPATH, "./parent::div/parent::div/parent::div//div[@dir='auto']//table")
+                    tableaux = message.find_elements(By.XPATH, "//div[@dir='auto']//table")
+                    for tab in tableaux:
+                        os.makedirs('imgTeams', exist_ok=True)
+                        file = f'imgTeams\\{str(id)}_tableau.png'
+                        tab.screenshot(file)
+                        tableau.append(file)
+                except:
+                    pass
+
+                image_path = image + tableau
+                image_path = ';'.join(image_path)
+
+                '''
+                Obtention de la date d'envoie du message
+                '''
+                heur = heur_mili(date.strftime('%d-%m-%Y_%H:%M:%S.%f'))
+
+                '''
+                Enregistrement de toutes les informations généré dans la base de donnée
+                '''
+                with sqlite3.connect('bdd.db') as conn:
+                    cursor = conn.cursor()
+
+                    cursor.execute(f'''
+                                    CREATE TABLE IF NOT EXISTS "{personne}"
+                                    (id REAL PRIMARY KEY, expediteur TEXT, message TEXT, reaction TEXT, image_path TEXT, heur TEXT)
+                                    ''')
+                    conn.commit()
+
+                    command = f'''
+                            INSERT or REPLACE INTO '{personne}' (id, expediteur, message, reaction, image_path, heur) values
+                            ({id}, "{expediteur}", "{txt}", "{reaction}", "{image_path}", "{heur}")
+                            '''
+                    cursor.execute(command)
+                    conn.commit()
+                time.sleep(0.2)
             except:
-                txt = ''
-
-            if txt == 'et me partager la date experiation licence comac' or txt == 'pourquoi donc ?':
-                print('h')
-
-            '''
-            Si le message comprend des réations ont les prends autrement on met la variable à vide
-            '''
-            reaction = []
-            reactions = message.find_elements(By.XPATH,
-                                              "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//div[starts-with(@class, 'ui-reactions')]//span[starts-with(@class, 'ui-text')]")
-            for react in reactions:
-                # attrs = []
-                # for attr in react.get_property('attributes'):
-                #     attrs.append([attr['name'], attr['value']])
-
-                tmp = [react.get_attribute('title'), react.get_attribute('data-tid').split('-')[0]]
-
-                if tmp[1] == 'heart':
-                    print('hey')
-
-                tmp[1] = emojy[tmp[1]]
-                tmp = '*'.join(tmp)
-                reaction.append(tmp[:])
-                del tmp
-            reaction = ';'.join(reaction)
-
-            '''
-            Si le message comprend une image alors on la prend, la convertit en fichier binaire puis l'enregistre
-            sous les deux format, binaire et fichier
-            '''
-            images = message.find_elements(By.XPATH, "./parent::div/parent::div/parent::div//div[@dir='auto']//img")
-            image = []
-            for img in images:
-                link = img.get_attribute("src")
-                src = get_file_content_chrome(driver, link)
-                file = [str(id), get_ext_from_byte(src)]
-                file = '.'.join(file)
-
-                os.makedirs('imgTeams', exist_ok=True)
-                file_link = f'imgTeams\\{file}'
-                image.append(file_link)
-                with open(file_link, 'wb') as outfile:
-                    outfile.write(src)
-            # image_path = ';'.join(image)
-
-            tableaux = message.find_elements(By.XPATH, "./parent::div/parent::div/parent::div//div[@dir='auto']//table")
-            tableau = []
-            for tab in tableaux:
-                file = f'{str(id)}_tableau.png'
-                tab.screenshot(file)
-                tableau.append(file)
-            image_path = image + tableau
-            image_path = ';'.join(image_path)
-
-            '''
-            Obtention de la date d'envoie du message
-            '''
-            heur = heur_mili(date.strftime('%d-%m-%Y_%H:%M:%S.%f'))
-
-            '''
-            Enregistrement de toutes les informations généré dans la base de donnée
-            '''
-            with sqlite3.connect('bdd.db') as conn:
-                cursor = conn.cursor()
-
-                cursor.execute(f'''
-                                CREATE TABLE IF NOT EXISTS "{personne}"
-                                (id REAL PRIMARY KEY, expediteur TEXT, message TEXT, reaction TEXT, image_path TEXT, heur TEXT)
-                                ''')
-                conn.commit()
-
-                command = f'''
-                        INSERT or REPLACE INTO '{personne}' (id, expediteur, message, reaction, image_path, heur) values
-                        ({id}, "{expediteur}", "{txt}", "{reaction}", "{image_path}", "{heur}")
-                        '''
-                cursor.execute(command)
-                conn.commit()
+                pass
 
         element = elements[0]
 
