@@ -47,48 +47,7 @@ def get_file_content_chrome(driver, uri):
     return base64.b64decode(result)
 
 
-# def save_message(driver, personne):
-#
-#     with sqlite3.connect('bdd.db') as conn:
-#         cursor = conn.cursor()
-#
-#         cursor.execute(f'''
-#                         CREATE TABLE IF NOT EXISTS "{personne}"
-#                         (id INTERGER PRIMARY KEY, message TEXT, image_path TEXT ,image TEXT ,heur TEXT)
-#                         ''')
-#         driver.switch_to.frame(
-#             driver.find_element(By.XPATH, "//iframe[@class='embedded-electron-webview embedded-page-content']"))
-#         messages = driver.find_elements(By.XPATH, Xpath)
-#         for message in messages:
-#
-#             date = message.find_element(By.XPATH,
-#                                         "//div[@class='ui-chat__messageheader']//time[@dir='auto']")
-#             message = message.find_element(By.XPATH, "//div[@dir='auto']//p")
-#
-#             date = date.get_attribute("datetime")
-#             date = datetime.datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%f0Z')
-#             date = date + datetime.timedelta(hours=1)
-#
-#             id = int(date.strftime('%Y%m%d%H%M%S%f'))
-#             try:
-#                 txt = message.get_attribute("innerText")
-#             except:
-#                 txt = ''
-#             image = ''
-#             heur = date.strftime('%Y-%m-%d_%H-%M-%S')
-#             image_path = ''
-#
-#             command = f'''
-#                     INSERT or REPLACE INTO '{personne}' (id, message, image_path, image, heur) values
-#                     ({id}, "{txt}", "{image_path}", "{image}", "{heur}")
-#                     '''
-#             cursor.execute(command)
-#             conn.commit()
-#
-#         print('hey')
-
-
-def remonte_max(driver, personne):
+def remonte_max(driver, personne, date_limite=None):
     def heur_mili(text: str):
         text = text.split('.')
         text[1] = text[1][:1]
@@ -103,7 +62,6 @@ def remonte_max(driver, personne):
     print('go')
 
     Xpath = "//ul[@aria-label='Contenu de la conversation']//li[@data-tid='chat-pane-item']//p"  # [@data-tid='chat-pane-item']"
-    # Xpath = "//ul[@aria-label='Contenu de la conversation']//li[@data-tid='chat-pane-item']"
 
     break_point = 0
     loop = 1
@@ -116,6 +74,8 @@ def remonte_max(driver, personne):
              'sad': '😢',
              'angry': '😠'
              }
+
+    date_limite = datetime.datetime.strptime('01/02/2022', '%d/%m/%Y')
 
     while True:
         for message in elements:
@@ -130,6 +90,10 @@ def remonte_max(driver, personne):
 
                 date = heur_mili(date.get_attribute("datetime"))
                 date = datetime.datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%f') + datetime.timedelta(hours=1)
+
+                if date_limite is not None:
+                    if date < date_limite:
+                        return None
 
                 id = int(date.strftime('%Y%m%d%H%M%S%f'))
 
@@ -260,7 +224,7 @@ def remonte_max(driver, personne):
         print('loop:', loop)
         loop += 1
 
-        if break_point >= 75:
+        if break_point >= 25:
             break
 
     return None
@@ -317,42 +281,7 @@ for conversation in conversations:
 
     # messages = driver.find_elements(By.XPATH, "//ul[@aria-label='Contenu de la conversation']/li[@data-tid='chat-pane-item']//p")
     # Xpath = "//ul[@aria-label='Contenu de la conversation']/li[@data-tid='chat-pane-item']"
-    messages = remonte_max(
-        driver=driver,
-        personne=personne)  # "//ul[@aria-label='Contenu de la conversation']/li[@data-tid='chat-pane-item//p']"
-    # save_message(driver=driver, personne=personne)
-
-    # for index, message in enumerate(messages):
-    #
-    #     try:
-    #         txt = message.get_attribute("innerText")
-    #     except:
-    #         txt = ''
-    #
-    #     src = message.find_elements(By.XPATH, './/img')
-    #     if len(src) > 0:
-    #         src = src[0]
-    #         src = src.get_attribute("src")
-    #         bytes = get_file_content_chrome(driver, src)
-    #         nom_fichier = src.split("/")[-1].replace('.png', '')
-    #         os.makedirs('imgTeams', exist_ok=True)
-    #         with open(f'imgTeams\\{nom_fichier}.png', 'wb') as outfile:
-    #             outfile.write(bytes)
-    #
-    #     title = message.get_attribute("title")
-    #
-    #     print(txt)
-    #     print(title)
-    #     print(src)
-    #
-    #     date = message.find_element(By.XPATH,
-    #                                 "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//time[@dir='auto']")
-    #     date = date.get_attribute("datetime")
-    #     date = datetime.datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%f0Z')
-    #
-    #     date = date + datetime.timedelta(hours=1)
-    #
-    #     print(index)
+    remonte_max(driver=driver, personne=personne)
 
 """
 scroll vers le bas :
