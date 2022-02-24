@@ -48,7 +48,6 @@ def get_file_content_chrome(driver, uri):
 
 
 def remonte_max(driver, personne, date_limite=None):
-
     driver.switch_to.frame(
         driver.find_element(By.XPATH, "//iframe[@class='embedded-electron-webview embedded-page-content']"))
 
@@ -74,9 +73,8 @@ def remonte_max(driver, personne, date_limite=None):
 
     date_limite = datetime.datetime.strptime('01/02/2022', '%d/%m/%Y')
 
-    elements = driver.find_elements(By.XPATH, Xpath)
-
     while True:
+        elements = driver.find_elements(By.XPATH, Xpath)
         for message in elements:
             try:
                 '''
@@ -90,22 +88,17 @@ def remonte_max(driver, personne, date_limite=None):
 
                 date = heur_mili(date.get_attribute("datetime"))
                 date = datetime.datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%f') + datetime.timedelta(hours=1)
-                print(date)
 
                 if date_limite is not None and date < date_limite:
                     return None
 
                 clef = date.strftime('%Y%m%d%H%M%S%f')
-                print(clef)
 
                 '''
                 Obtention du nom de la personne qui à envoyer le message
                 '''
                 expediteur = message.find_element(By.XPATH,
                                                   ".//div[@class='ui-chat__messageheader']//span[@dir='auto']")
-                # "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//span[@dir='auto']")
-                # expediteur = message.find_element(By.XPATH,
-                #                                   "//div[@class='ui-chat__messageheader']//span[@dir='auto']")
                 expediteur = expediteur.get_attribute("innerText")
 
                 '''
@@ -127,11 +120,6 @@ def remonte_max(driver, personne, date_limite=None):
                 reaction = []
                 reactions = message.find_elements(By.XPATH,
                                                   ".//button//img")
-                # "//div[@class='ui-chat__messageheader']//div[starts-with(@class, 'ui-reactions')]")
-                # "//div[@class='ui-chat__messageheader']//div[starts-with(@class, 'ui-reactions')]//span[starts-with(@class, 'ui-text')]")
-                # "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//div[starts-with(@class, 'ui-reactions')]//span[starts-with(@class, 'ui-text')]")
-                # reactions = message.find_elements(By.XPATH,
-                #                                   "//div[@class='ui-chat__messageheader']//div[starts-with(@class, 'ui-reactions')]//span[starts-with(@class, 'ui-text')]")
                 try:
                     for react in reactions:
                         # attrs = []
@@ -139,9 +127,6 @@ def remonte_max(driver, personne, date_limite=None):
                         #     attrs.append([attr['name'], attr['value']])
 
                         tmp = [react.get_attribute('title'), react.get_attribute('data-tid').split('-')[0]]
-
-                        # if tmp[1] == 'heart':
-                        #     print('hey')
 
                         tmp[1] = emojy[tmp[1]]
                         tmp = '*'.join(tmp)
@@ -158,8 +143,6 @@ def remonte_max(driver, personne, date_limite=None):
                 image = []
                 images = message.find_elements(By.XPATH,
                                                ".//p//img")
-                # "./parent::div/parent::div/parent::div//div[@dir='auto']//img")
-                # images = message.find_elements(By.XPATH, "//div[@dir='auto']//img")
                 for index, img in enumerate(images):
                     link = img.get_attribute("src")
                     src = get_file_content_chrome(driver, link)
@@ -171,10 +154,8 @@ def remonte_max(driver, personne, date_limite=None):
                     image.append(file_link)
                     with open(file_link, 'wb') as outfile:
                         outfile.write(src)
-                # image_path = ';'.join(image)
 
                 tableau = []
-                # tableaux = message.find_elements(By.XPATH, "./parent::div/parent::div/parent::div//div[@dir='auto']//table")
                 tableaux = message.find_elements(By.XPATH, ".//div[@dir='auto']//table")
                 for index, tab in enumerate(tableaux):
                     os.makedirs('imgTeams', exist_ok=True)
@@ -182,7 +163,7 @@ def remonte_max(driver, personne, date_limite=None):
                     tab.screenshot(file)
                     tableau.append(file)
 
-                image_path = image # + tableau
+                image_path = image + tableau
                 image_path = ';'.join(image_path)
 
                 '''
@@ -196,47 +177,50 @@ def remonte_max(driver, personne, date_limite=None):
                 with sqlite3.connect('bdd.db') as conn:
                     cursor = conn.cursor()
 
-                    cursor.execute(f'''
-                                    CREATE TABLE IF NOT EXISTS "{personne}"
-                                    (id TEXT PRIMARY KEY, expediteur TEXT, message TEXT, reaction TEXT, image_path TEXT, heur TEXT);
-                                    ''')
+                    command = f'''
+                            CREATE TABLE IF NOT EXISTS "{personne}"
+                            (id TEXT PRIMARY KEY, expediteur TEXT, message TEXT, reaction TEXT, image_path TEXT, heur TEXT);
+                            '''
+
+                    cursor.execute(command)
                     conn.commit()
 
                     command = f'''
-                            INSERT or REPLACE INTO '{personne}' (id, expediteur, message, reaction, image_path, heur) values
+                            INSERT INTO '{personne}' (id, expediteur, message, reaction, image_path, heur) values
                             ("{clef}", "{expediteur}", "{txt}", "{reaction}", "{image_path}", "{heur}");
                             '''
-                    cursor.execute(command)
-                    conn.commit()
+                    try:
+                        cursor.execute(command)
+                        conn.commit()
 
-                    command = f'''
-                            SELECT COUNT(*)
-                            FROM "{personne}"
-                            '''
-                    cursor.execute(command)
-                    numberOfRows = cursor.fetchone()[0]
-                    print(numberOfRows)
+                        # command = f'''
+                        #         SELECT COUNT(*)
+                        #         FROM "{personne}"
+                        #         '''
+                        # cursor.execute(command)
+                        # numberOfRows = cursor.fetchone()[0]
+                        # print(numberOfRows)
+                    except sqlite3.IntegrityError:
+                        pass
+
+                del command
 
                 time.sleep(0.2)
 
             except selenium.common.exceptions.StaleElementReferenceException:
                 pass
 
-        element = elements[0]
-
         try:
-            driver.execute_script('arguments[0].scrollIntoView(true);', element)
+            driver.execute_script('arguments[0].scrollIntoView(true);', elements[0])
         except StaleElementReferenceException:
-            pass
-        new_elements = driver.find_elements(By.XPATH, Xpath)
-        new_element = new_elements[0]
+            print(elements[0])
 
-        if element == new_element:
+        new_elements = driver.find_elements(By.XPATH, Xpath)
+
+        if elements[0] == new_elements[0]:
             break_point += 1
-            # time.sleep(0.2)
         else:
             break_point = 0
-            elements = new_elements
 
         print('break_point:', break_point)
         print('loop:', loop)
