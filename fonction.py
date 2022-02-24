@@ -19,3 +19,12 @@ def get_ext_from_byte(byte: bytes):
 def get_name_file(link: str):
 
     return link.split('/')[-1].split('.')[0]
+
+def heur_mili(text: str):
+    text = text.split('.')
+    text[1] = text[1][:2]
+    while len(text[1]) < 2:
+        text[1] = f'{text[1]}0'
+    text = '.'.join(text)
+
+    return text

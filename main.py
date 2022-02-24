@@ -48,11 +48,6 @@ def get_file_content_chrome(driver, uri):
 
 
 def remonte_max(driver, personne, date_limite=None):
-    def heur_mili(text: str):
-        text = text.split('.')
-        text[1] = text[1][:1]
-        text = '.'.join(text)
-        return text
 
     driver.switch_to.frame(
         driver.find_element(By.XPATH, "//iframe[@class='embedded-electron-webview embedded-page-content']"))
@@ -88,25 +83,26 @@ def remonte_max(driver, personne, date_limite=None):
                 Obtention de la date du message qui servira à généré un identifiant unique
                 '''
                 date = message.find_element(By.XPATH,
-                                            "//div[@class='ui-chat__messageheader']//time[@dir='auto']")
+                                            ".//div[@class='ui-chat__messageheader']//time[@dir='auto']")
                 # "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//time[@dir='auto']")
                 # date = message.find_element(By.XPATH,
                 #                             "//div[@class='ui-chat__messageheader']//time[@dir='auto']")
 
                 date = heur_mili(date.get_attribute("datetime"))
                 date = datetime.datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%f') + datetime.timedelta(hours=1)
+                print(date)
 
-                if date_limite is not None:
-                    if date < date_limite:
-                        return None
+                if date_limite is not None and date < date_limite:
+                    return None
 
-                id = int(date.strftime('%Y%m%d%H%M%S%f'))
+                clef = date.strftime('%Y%m%d%H%M%S%f')
+                print(clef)
 
                 '''
                 Obtention du nom de la personne qui à envoyer le message
                 '''
                 expediteur = message.find_element(By.XPATH,
-                                                  "//div[@class='ui-chat__messageheader']//span[@dir='auto']")
+                                                  ".//div[@class='ui-chat__messageheader']//span[@dir='auto']")
                 # "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//span[@dir='auto']")
                 # expediteur = message.find_element(By.XPATH,
                 #                                   "//div[@class='ui-chat__messageheader']//span[@dir='auto']")
@@ -116,11 +112,11 @@ def remonte_max(driver, personne, date_limite=None):
                 Si le message comprend du texte alors on le prend sinon on met une varible vide
                 '''
                 try:
-                    txt = message.find_element(By.XPATH, '//div[@dir="auto"]//p')
+                    txt = message.find_element(By.XPATH, './/div[@dir="auto"]//p')
                     txt = txt.get_attribute("innerText")
                 except:
                     try:
-                        txt = message.find_element(By.XPATH, '//div[@dir="auto"]//div')
+                        txt = message.find_element(By.XPATH, './/div[@dir="auto"]//div')
                         txt = txt.get_attribute('innerText')
                     except:
                         txt = ''
@@ -130,7 +126,7 @@ def remonte_max(driver, personne, date_limite=None):
                 '''
                 reaction = []
                 reactions = message.find_elements(By.XPATH,
-                                                  "//button//img")
+                                                  ".//button//img")
                 # "//div[@class='ui-chat__messageheader']//div[starts-with(@class, 'ui-reactions')]")
                 # "//div[@class='ui-chat__messageheader']//div[starts-with(@class, 'ui-reactions')]//span[starts-with(@class, 'ui-text')]")
                 # "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//div[starts-with(@class, 'ui-reactions')]//span[starts-with(@class, 'ui-text')]")
@@ -160,37 +156,31 @@ def remonte_max(driver, personne, date_limite=None):
                 sous les deux format, binaire et fichier
                 '''
                 image = []
-                try:
-                    images = message.find_elements(By.XPATH,
-                                                   "//div[@dir='auto']//img")
-                    # "./parent::div/parent::div/parent::div//div[@dir='auto']//img")
-                    # images = message.find_elements(By.XPATH, "//div[@dir='auto']//img")
-                    for index, img in enumerate(images):
-                        link = img.get_attribute("src")
-                        src = get_file_content_chrome(driver, link)
-                        file = [f'{str(id)}_{str(index)}', get_ext_from_byte(src)]
-                        file = '.'.join(file)
+                images = message.find_elements(By.XPATH,
+                                               ".//p//img")
+                # "./parent::div/parent::div/parent::div//div[@dir='auto']//img")
+                # images = message.find_elements(By.XPATH, "//div[@dir='auto']//img")
+                for index, img in enumerate(images):
+                    link = img.get_attribute("src")
+                    src = get_file_content_chrome(driver, link)
+                    file = [f'{clef}_{index}', get_ext_from_byte(src)]
+                    file = '.'.join(file)
 
-                        os.makedirs('imgTeams', exist_ok=True)
-                        file_link = f'imgTeams\\{file}'
-                        image.append(file_link)
-                        with open(file_link, 'wb') as outfile:
-                            outfile.write(src)
-                    # image_path = ';'.join(image)
-                except:
-                    pass
+                    os.makedirs('imgTeams', exist_ok=True)
+                    file_link = f'imgTeams\\{file}'
+                    image.append(file_link)
+                    with open(file_link, 'wb') as outfile:
+                        outfile.write(src)
+                # image_path = ';'.join(image)
 
-                # tableau = []
-                # try:
-                #     # tableaux = message.find_elements(By.XPATH, "./parent::div/parent::div/parent::div//div[@dir='auto']//table")
-                #     tableaux = message.find_elements(By.XPATH, "//div[@dir='auto']//table")
-                #     for tab in tableaux:
-                #         os.makedirs('imgTeams', exist_ok=True)
-                #         file = f'imgTeams\\{str(id)}_tableau.png'
-                #         tab.screenshot(file)
-                #         tableau.append(file)
-                # except:
-                #     pass
+                tableau = []
+                # tableaux = message.find_elements(By.XPATH, "./parent::div/parent::div/parent::div//div[@dir='auto']//table")
+                tableaux = message.find_elements(By.XPATH, ".//div[@dir='auto']//table")
+                for index, tab in enumerate(tableaux):
+                    os.makedirs('imgTeams', exist_ok=True)
+                    file = f'imgTeams\\{clef}_tableau_{index}.png'
+                    tab.screenshot(file)
+                    tableau.append(file)
 
                 image_path = image # + tableau
                 image_path = ';'.join(image_path)
@@ -208,18 +198,28 @@ def remonte_max(driver, personne, date_limite=None):
 
                     cursor.execute(f'''
                                     CREATE TABLE IF NOT EXISTS "{personne}"
-                                    (id REAL PRIMARY KEY, expediteur TEXT, message TEXT, reaction TEXT, image_path TEXT, heur TEXT)
+                                    (id TEXT PRIMARY KEY, expediteur TEXT, message TEXT, reaction TEXT, image_path TEXT, heur TEXT);
                                     ''')
                     conn.commit()
 
                     command = f'''
                             INSERT or REPLACE INTO '{personne}' (id, expediteur, message, reaction, image_path, heur) values
-                            ({id}, "{expediteur}", "{txt}", "{reaction}", "{image_path}", "{heur}")
+                            ("{clef}", "{expediteur}", "{txt}", "{reaction}", "{image_path}", "{heur}");
                             '''
                     cursor.execute(command)
                     conn.commit()
+
+                    command = f'''
+                            SELECT COUNT(*)
+                            FROM "{personne}"
+                            '''
+                    cursor.execute(command)
+                    numberOfRows = cursor.fetchone()[0]
+                    print(numberOfRows)
+
                 time.sleep(0.2)
-            except:
+
+            except selenium.common.exceptions.StaleElementReferenceException:
                 pass
 
         element = elements[0]
