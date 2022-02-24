@@ -1,11 +1,8 @@
 import datetime
-import json
 
 import os
-import threading
-import time
-import base64
 import sqlite3
+import time
 
 import selenium.webdriver
 from selenium import webdriver
@@ -55,7 +52,7 @@ def remonte_max(driver, personne, date_limite=None):
 
     print('go')
 
-    Xpath = "//div[@data-tid='chat-pane-message']"
+    Xpath = "//li[@data-tid='chat-pane-item']"
 
     # "//ul[@aria-label='Contenu de la conversation']//li[@data-tid='chat-pane-item']//div[starts-with(@class, " \
     # "'ui-box') and substring(@class, string-length(@class) - string-length('message') +1) = 'message']//div[" \
@@ -166,54 +163,85 @@ def remonte_max(driver, personne, date_limite=None):
                 image_path = image + tableau
                 image_path = ';'.join(image_path)
 
-                '''
+                """
+                Si le message comprend un fichier à télécharger
+                """
+
+                piece_jointe = []
+                # attachements = message.find_elements(By.XPATH, ".//button[@title='Autres options de pièce jointe']")
+                # for attach in attachements:
+                #     attach.click()
+                #     time.sleep(1)
+                #     # driver.find_element(By.XPATH, "//span[normalize-space()='Télécharger']").click()
+                #
+                #     driver.find_element(By.XPATH, "//span[normalize-space()='Copier le lien']").click()
+                #     time.sleep(1)
+                #
+                #     join = get_link_share(driver)
+                #
+                #     # file_name = getDownLoadedFileName(300, driver)
+                #     # dowload_path = fr"C:/Users/{os.getlogin()}/Downloads"
+                #     # os.makedirs('attachementTeams', exist_ok=True)
+                #     # join = fr'attachementTeams/{file_name}'
+                #     # shutil.move(fr'{dowload_path}/{file_name}', join)
+                #     piece_jointe.append(join)
+                piece_jointe = ';'.join(piece_jointe)
+
+                """
                 Obtention de la date d'envoie du message
-                '''
+                """
                 heur = heur_mili(date.strftime('%d-%m-%Y_%H:%M:%S.%f'))
 
-                '''
+                """
                 Enregistrement de toutes les informations généré dans la base de donnée
-                '''
+                """
                 with sqlite3.connect('bdd.db') as conn:
                     cursor = conn.cursor()
 
-                    command = f'''
-                            CREATE TABLE IF NOT EXISTS "{personne}"
-                            (id TEXT PRIMARY KEY, expediteur TEXT, message TEXT, reaction TEXT, image_path TEXT, heur TEXT);
-                            '''
+                    command = f"""
+                            CREATE TABLE IF NOT EXISTS {personne} (id TEXT PRIMARY KEY, expediteur TEXT, message 
+                            TEXT, reaction TEXT, image_path TEXT, pièce_jointe, heur TEXT); 
+                            """
 
                     cursor.execute(command)
                     conn.commit()
 
-                    command = f'''
-                            INSERT INTO '{personne}' (id, expediteur, message, reaction, image_path, heur) values
-                            ("{clef}", "{expediteur}", "{txt}", "{reaction}", "{image_path}", "{heur}");
-                            '''
+                    command = f"""
+                            INSERT INTO {personne} (id, expediteur, message, reaction, image_path, pièce_jointe, heur) values
+                            ("{clef}", "{expediteur}", "{txt}", "{reaction}", "{image_path}", "{piece_jointe}", "{heur}");
+                            """
                     try:
                         cursor.execute(command)
                         conn.commit()
 
-                        # command = f'''
-                        #         SELECT COUNT(*)
-                        #         FROM "{personne}"
-                        #         '''
-                        # cursor.execute(command)
-                        # numberOfRows = cursor.fetchone()[0]
-                        # print(numberOfRows)
+                        command = f"""
+                                SELECT COUNT(*)
+                                FROM "{personne}"
+                                """
+                        cursor.execute(command)
+                        numberOfRows = cursor.fetchone()[0]
+                        print(numberOfRows)
                     except sqlite3.IntegrityError:
-                        pass
-
+                        print(clef)
                 del command
 
                 time.sleep(0.2)
 
             except selenium.common.exceptions.StaleElementReferenceException:
                 pass
+            except selenium.common.exceptions.NoSuchElementException:
+                print('maj dans le script java')
+                break
 
         try:
             driver.execute_script('arguments[0].scrollIntoView(true);', elements[0])
         except StaleElementReferenceException:
-            print(elements[0])
+            # print(elements[0])
+            pass
+        except IndexError:
+            loop = 0
+            break_point = 0
+            print('refresh de mort de la page, on repart à 0 :)')
 
         new_elements = driver.find_elements(By.XPATH, Xpath)
 
@@ -278,7 +306,7 @@ conversations = driver.find_elements(By.XPATH, "//div[@data-tab-area='recipient-
 for conversation in conversations:
     conversation.click()
     time.sleep(2)
-    personne = conversation.get_attribute("innerText").split(' (')[0].replace(' ', '_')
+    personne = conversation.get_attribute("innerText").split(' (')[0].replace(' ', '_').replace('-', '_')
     print(personne)
 
     # messages = driver.find_elements(By.XPATH, "//ul[@aria-label='Contenu de la conversation']/li[@data-tid='chat-pane-item']//p")
@@ -305,11 +333,3 @@ element = driver.find_element(By.XPATH, "//button[@class='']")
 touche
 elem.send_keys(Keys.RETURN)
 """
-
-
-def FUNC():
-    pass
-
-
-TH = threading.Thread(target=FUNC)
-TH.start()
