@@ -61,12 +61,12 @@ def remonte_max(driver, personne, date_limite=None):
 
     print('go')
 
-    Xpath = "//ul[@aria-label='Contenu de la conversation']//li[@data-tid='chat-pane-item']//p"  # [@data-tid='chat-pane-item']"
+    Xpath = "//ul[@aria-label='Contenu de la conversation']//li[@data-tid='chat-pane-item']//div[starts-with(@class, " \
+            "'ui-box') and substring(@class, string-length(@class) - string-length('message') +1) = 'message']//div[" \
+            "not(@role)]//div"  # [@data-tid='chat-pane-item'] "
 
     break_point = 0
     loop = 1
-    elements = driver.find_elements(By.XPATH, Xpath)
-
     emojy = {'like': '👍',
              'heart': '❤',
              'laugh': '😀',
@@ -77,6 +77,8 @@ def remonte_max(driver, personne, date_limite=None):
 
     date_limite = datetime.datetime.strptime('01/02/2022', '%d/%m/%Y')
 
+    elements = driver.find_elements(By.XPATH, Xpath)
+
     while True:
         for message in elements:
             try:
@@ -84,7 +86,8 @@ def remonte_max(driver, personne, date_limite=None):
                 Obtention de la date du message qui servira à généré un identifiant unique
                 '''
                 date = message.find_element(By.XPATH,
-                                            "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//time[@dir='auto']")
+                                            "//div[@class='ui-chat__messageheader']//time[@dir='auto']")
+                # "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//time[@dir='auto']")
                 # date = message.find_element(By.XPATH,
                 #                             "//div[@class='ui-chat__messageheader']//time[@dir='auto']")
 
@@ -101,7 +104,8 @@ def remonte_max(driver, personne, date_limite=None):
                 Obtention du nom de la personne qui à envoyer le message
                 '''
                 expediteur = message.find_element(By.XPATH,
-                                                  "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//span[@dir='auto']")
+                                                  "//div[@class='ui-chat__messageheader']//span[@dir='auto']")
+                # "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//span[@dir='auto']")
                 # expediteur = message.find_element(By.XPATH,
                 #                                   "//div[@class='ui-chat__messageheader']//span[@dir='auto']")
                 expediteur = expediteur.get_attribute("innerText")
@@ -110,33 +114,42 @@ def remonte_max(driver, personne, date_limite=None):
                 Si le message comprend du texte alors on le prend sinon on met une varible vide
                 '''
                 try:
-                    # txt = message.find_element(By.XPATH, '//p')
-                    txt = message.get_attribute("innerText")
+                    txt = message.find_element(By.XPATH, '//div[@dir="auto"]//p')
+                    txt = txt.get_attribute("innerText")
                 except:
-                    txt = ''
+                    try:
+                        txt = message.find_element(By.XPATH, '//div[@dir="auto"]//div')
+                        txt = txt.get_attribute('innerText')
+                    except:
+                        txt = ''
 
                 '''
                 Si le message comprend des réations ont les prends autrement on met la variable à vide
                 '''
                 reaction = []
                 reactions = message.find_elements(By.XPATH,
-                                                  "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//div[starts-with(@class, 'ui-reactions')]//span[starts-with(@class, 'ui-text')]")
+                                                  "//div[@class='ui-chat__messageheader']//div[starts-with(@class, 'ui-reactions')]")
+                # "//div[@class='ui-chat__messageheader']//div[starts-with(@class, 'ui-reactions')]//span[starts-with(@class, 'ui-text')]")
+                # "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//div[starts-with(@class, 'ui-reactions')]//span[starts-with(@class, 'ui-text')]")
                 # reactions = message.find_elements(By.XPATH,
                 #                                   "//div[@class='ui-chat__messageheader']//div[starts-with(@class, 'ui-reactions')]//span[starts-with(@class, 'ui-text')]")
-                for react in reactions:
-                    # attrs = []
-                    # for attr in react.get_property('attributes'):
-                    #     attrs.append([attr['name'], attr['value']])
+                try:
+                    for react in reactions:
+                        # attrs = []
+                        # for attr in react.get_property('attributes'):
+                        #     attrs.append([attr['name'], attr['value']])
 
-                    tmp = [react.get_attribute('title'), react.get_attribute('data-tid').split('-')[0]]
+                        tmp = [react.get_attribute('title'), react.get_attribute('data-tid').split('-')[0]]
 
-                    # if tmp[1] == 'heart':
-                    #     print('hey')
+                        # if tmp[1] == 'heart':
+                        #     print('hey')
 
-                    tmp[1] = emojy[tmp[1]]
-                    tmp = '*'.join(tmp)
-                    reaction.append(tmp[:])
-                    del tmp
+                        tmp[1] = emojy[tmp[1]]
+                        tmp = '*'.join(tmp)
+                        reaction.append(tmp[:])
+                        del tmp
+                except:
+                    pass
                 reaction = ';'.join(reaction)
 
                 '''
@@ -145,12 +158,14 @@ def remonte_max(driver, personne, date_limite=None):
                 '''
                 image = []
                 try:
-                    images = message.find_elements(By.XPATH, "./parent::div/parent::div/parent::div//div[@dir='auto']//img")
+                    images = message.find_elements(By.XPATH,
+                                                   "//div[@dir='auto']//img")
+                    # "./parent::div/parent::div/parent::div//div[@dir='auto']//img")
                     # images = message.find_elements(By.XPATH, "//div[@dir='auto']//img")
-                    for img in images:
+                    for index, img in enumerate(images):
                         link = img.get_attribute("src")
                         src = get_file_content_chrome(driver, link)
-                        file = [str(id), get_ext_from_byte(src)]
+                        file = [f'{str(id)}{str(index)}', get_ext_from_byte(src)]
                         file = '.'.join(file)
 
                         os.makedirs('imgTeams', exist_ok=True)
