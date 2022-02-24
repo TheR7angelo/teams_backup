@@ -61,9 +61,11 @@ def remonte_max(driver, personne, date_limite=None):
 
     print('go')
 
-    Xpath = "//ul[@aria-label='Contenu de la conversation']//li[@data-tid='chat-pane-item']//div[starts-with(@class, " \
-            "'ui-box') and substring(@class, string-length(@class) - string-length('message') +1) = 'message']//div[" \
-            "not(@role)]//div"  # [@data-tid='chat-pane-item'] "
+    Xpath = "//div[@data-tid='chat-pane-message']"
+
+    # "//ul[@aria-label='Contenu de la conversation']//li[@data-tid='chat-pane-item']//div[starts-with(@class, " \
+    # "'ui-box') and substring(@class, string-length(@class) - string-length('message') +1) = 'message']//div[" \
+    # "not(@role)]//div"
 
     break_point = 0
     loop = 1
@@ -128,7 +130,8 @@ def remonte_max(driver, personne, date_limite=None):
                 '''
                 reaction = []
                 reactions = message.find_elements(By.XPATH,
-                                                  "//div[@class='ui-chat__messageheader']//div[starts-with(@class, 'ui-reactions')]")
+                                                  "//button//img")
+                # "//div[@class='ui-chat__messageheader']//div[starts-with(@class, 'ui-reactions')]")
                 # "//div[@class='ui-chat__messageheader']//div[starts-with(@class, 'ui-reactions')]//span[starts-with(@class, 'ui-text')]")
                 # "./parent::div/parent::div/parent::div//div[@class='ui-chat__messageheader']//div[starts-with(@class, 'ui-reactions')]//span[starts-with(@class, 'ui-text')]")
                 # reactions = message.find_elements(By.XPATH,
@@ -165,7 +168,7 @@ def remonte_max(driver, personne, date_limite=None):
                     for index, img in enumerate(images):
                         link = img.get_attribute("src")
                         src = get_file_content_chrome(driver, link)
-                        file = [f'{str(id)}{str(index)}', get_ext_from_byte(src)]
+                        file = [f'{str(id)}_{str(index)}', get_ext_from_byte(src)]
                         file = '.'.join(file)
 
                         os.makedirs('imgTeams', exist_ok=True)
