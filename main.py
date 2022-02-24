@@ -102,13 +102,24 @@ def remonte_max(driver, personne, date_limite=None):
                 '''
                 Si le message comprend du texte alors on le prend sinon on met une varible vide
                 '''
+
                 try:
                     txt = message.find_element(By.XPATH, './/div[@dir="auto"]//p')
-                    txt = txt.get_attribute("innerText")
+                    txt = txt.get_attribute("innerText").replace('"', '""')
+
+                    if txt == '':
+                        txt = message.find_element(By.XPATH, './/div[@dir="auto"]//div')
+                        txt = txt.get_attribute('innerText').replace('"', '""')
+                    if txt == '':
+                        txt = message.find_element(By.XPATH, './/a')
+                        txt = txt.get_attribute('title')
                 except:
                     try:
                         txt = message.find_element(By.XPATH, './/div[@dir="auto"]//div')
-                        txt = txt.get_attribute('innerText')
+                        txt = txt.get_attribute('innerText').replace('"', '""')
+                        if txt == '':
+                            txt = message.find_element(By.XPATH, './/a')
+                            txt = txt.get_attribute('title')
                     except:
                         txt = ''
 
@@ -136,11 +147,10 @@ def remonte_max(driver, personne, date_limite=None):
 
                 '''
                 Si le message comprend une image alors on la prend, la convertit en fichier binaire puis l'enregistre
-                sous les deux format, binaire et fichier
                 '''
                 image = []
                 images = message.find_elements(By.XPATH,
-                                               ".//p//img")
+                                               ".//span[starts-with(@class, 'ui-flex')]//img")
                 for index, img in enumerate(images):
                     link = img.get_attribute("src")
                     src = get_file_content_chrome(driver, link)
@@ -209,7 +219,7 @@ def remonte_max(driver, personne, date_limite=None):
 
                     command = f"""
                             INSERT INTO {personne} (id, expediteur, message, reaction, image_path, piece_jointe, heur) values
-                            (`{clef}`, `{expediteur}`, `{txt}`, `{reaction}`, `{image_path}`, `{piece_jointe}`, `{heur}`);
+                            ("{clef}", "{expediteur}", "{txt}", "{reaction}", "{image_path}", "{piece_jointe}", "{heur}");
                             """
                     try:
                         cursor.execute(command)
@@ -217,7 +227,7 @@ def remonte_max(driver, personne, date_limite=None):
 
                         command = f"""
                                 SELECT COUNT(*)
-                                FROM `{personne}`
+                                FROM "{personne}"
                                 """
                         cursor.execute(command)
                         numberOfRows = cursor.fetchone()[0]
