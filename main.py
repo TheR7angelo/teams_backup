@@ -87,7 +87,8 @@ def remonte_max(driver, personne, date_limite=None):
                 date = datetime.datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%f') + datetime.timedelta(hours=1)
 
                 if date_limite is not None and date < date_limite:
-                    return None
+                    driver.switch_to.default_content()
+                    return
 
                 clef = date.strftime('%Y%m%d%H%M%S%f')
 
@@ -146,8 +147,8 @@ def remonte_max(driver, personne, date_limite=None):
                     file = [f'{clef}_{index}', get_ext_from_byte(src)]
                     file = '.'.join(file)
 
-                    os.makedirs('imgTeams', exist_ok=True)
-                    file_link = f'imgTeams\\{file}'
+                    os.makedirs(fr'imgTeams\{personne}', exist_ok=True)
+                    file_link = fr'imgTeams\{personne}\{file}'
                     image.append(file_link)
                     with open(file_link, 'wb') as outfile:
                         outfile.write(src)
@@ -155,8 +156,8 @@ def remonte_max(driver, personne, date_limite=None):
                 tableau = []
                 tableaux = message.find_elements(By.XPATH, ".//div[@dir='auto']//table")
                 for index, tab in enumerate(tableaux):
-                    os.makedirs('imgTeams', exist_ok=True)
-                    file = f'imgTeams\\{clef}_tableau_{index}.png'
+                    os.makedirs(fr'imgTeams\{personne}', exist_ok=True)
+                    file = fr'imgTeams\{personne}\{clef}_tableau_{index}.png'
                     tab.screenshot(file)
                     tableau.append(file)
 
@@ -200,15 +201,15 @@ def remonte_max(driver, personne, date_limite=None):
 
                     command = f"""
                             CREATE TABLE IF NOT EXISTS {personne} (id TEXT PRIMARY KEY, expediteur TEXT, message 
-                            TEXT, reaction TEXT, image_path TEXT, pièce_jointe, heur TEXT); 
+                            TEXT, reaction TEXT, image_path TEXT, piece_jointe TEXT, heur TEXT); 
                             """
 
                     cursor.execute(command)
                     conn.commit()
 
                     command = f"""
-                            INSERT INTO {personne} (id, expediteur, message, reaction, image_path, pièce_jointe, heur) values
-                            ("{clef}", "{expediteur}", "{txt}", "{reaction}", "{image_path}", "{piece_jointe}", "{heur}");
+                            INSERT INTO {personne} (id, expediteur, message, reaction, image_path, piece_jointe, heur) values
+                            (`{clef}`, `{expediteur}`, `{txt}`, `{reaction}`, `{image_path}`, `{piece_jointe}`, `{heur}`);
                             """
                     try:
                         cursor.execute(command)
@@ -216,7 +217,7 @@ def remonte_max(driver, personne, date_limite=None):
 
                         command = f"""
                                 SELECT COUNT(*)
-                                FROM "{personne}"
+                                FROM `{personne}`
                                 """
                         cursor.execute(command)
                         numberOfRows = cursor.fetchone()[0]
@@ -257,6 +258,7 @@ def remonte_max(driver, personne, date_limite=None):
         if break_point >= 25:
             break
 
+    driver.switch_to.default_content()
     return None
 
 
