@@ -40,7 +40,8 @@ def get_file_content_chrome(driver, uri):
     xhr.send();
     """, uri)
     if type(result) == int:
-        raise Exception("Request failed with status %s" % result)
+        return None
+        # raise Exception("Request failed with status %s" % result)
     return base64.b64decode(result)
 
 
@@ -69,10 +70,11 @@ def remonte_max(driver, personne, date_limite=None):
              }
 
     date_limite = datetime.datetime.strptime('01/02/2022', '%d/%m/%Y')
+    liste_clef = []
 
     while True:
         elements = driver.find_elements(By.XPATH, Xpath)
-        for message in elements:
+        for message in reversed(elements):
             try:
                 '''
                 Obtention de la date du message qui servira à généré un identifiant unique
@@ -91,6 +93,15 @@ def remonte_max(driver, personne, date_limite=None):
                     return
 
                 clef = date.strftime('%Y%m%d%H%M%S%f')
+
+                '''
+                On regarde si la clef est pas déja enregistrer sinon on l'ignore
+                '''
+                if clef in liste_clef:
+                    print('skip car message déja enregistrer')
+                    continue
+                else:
+                    liste_clef.append(clef)
 
                 '''
                 Obtention du nom de la personne qui à envoyer le message
@@ -154,14 +165,15 @@ def remonte_max(driver, personne, date_limite=None):
                 for index, img in enumerate(images):
                     link = img.get_attribute("src")
                     src = get_file_content_chrome(driver, link)
-                    file = [f'{clef}_{index}', get_ext_from_byte(src)]
-                    file = '.'.join(file)
+                    if src is not None:
+                        file = [f'{clef}_{index}', get_ext_from_byte(src)]
+                        file = '.'.join(file)
 
-                    os.makedirs(fr'imgTeams\{personne}', exist_ok=True)
-                    file_link = fr'imgTeams\{personne}\{file}'
-                    image.append(file_link)
-                    with open(file_link, 'wb') as outfile:
-                        outfile.write(src)
+                        os.makedirs(fr'imgTeams\{personne}', exist_ok=True)
+                        file_link = fr'imgTeams\{personne}\{file}'
+                        image.append(file_link)
+                        with open(file_link, 'wb') as outfile:
+                            outfile.write(src)
 
                 tableau = []
                 tableaux = message.find_elements(By.XPATH, ".//div[@dir='auto']//table")
@@ -179,23 +191,27 @@ def remonte_max(driver, personne, date_limite=None):
                 """
 
                 piece_jointe = []
-                # attachements = message.find_elements(By.XPATH, ".//button[@title='Autres options de pièce jointe']")
-                # for attach in attachements:
-                #     attach.click()
-                #     time.sleep(1)
-                #     # driver.find_element(By.XPATH, "//span[normalize-space()='Télécharger']").click()
-                #
-                #     driver.find_element(By.XPATH, "//span[normalize-space()='Copier le lien']").click()
-                #     time.sleep(1)
-                #
-                #     join = get_link_share(driver)
-                #
-                #     # file_name = getDownLoadedFileName(300, driver)
-                #     # dowload_path = fr"C:/Users/{os.getlogin()}/Downloads"
-                #     # os.makedirs('attachementTeams', exist_ok=True)
-                #     # join = fr'attachementTeams/{file_name}'
-                #     # shutil.move(fr'{dowload_path}/{file_name}', join)
-                #     piece_jointe.append(join)
+                attachements = message.find_elements(By.XPATH, ".//button[@title='Autres options de pièce jointe']")
+                for button in attachements:
+                    button.click()
+                    time.sleep(3)
+                    button = driver.find_element(By.XPATH, "//span[normalize-space()='Copier le lien']")
+                    button.click()
+                    time.sleep(3)
+
+                    driver.switch_to.frame(driver.find_element(By.XPATH, "//iframe[@name='shareFrame']"))
+
+                    url = driver.find_element(By.XPATH, "//input[@type='text']")
+                    url = url.get_attribute('value')
+                    piece_jointe.append(url)
+
+                    button = driver.find_element(By.XPATH, "//button[@aria-label='Fermer']")
+                    button.click()
+                    time.sleep(3)
+
+                    driver.switch_to.default_content()
+                    driver.switch_to.frame(driver.find_element(By.XPATH,
+                                            "//iframe[@class='embedded-electron-webview embedded-page-content']"))
                 piece_jointe = ';'.join(piece_jointe)
 
                 """
@@ -318,7 +334,7 @@ conversations = driver.find_elements(By.XPATH, "//div[@data-tab-area='recipient-
 for conversation in conversations:
     conversation.click()
     time.sleep(2)
-    personne = conversation.get_attribute("innerText").split(' (')[0].replace(' ', '_').replace('-', '_')
+    personne = conversation.get_attribute("innerText").replace(' ', '_').replace('-', '_').replace('(', '').replace(')', '').replace('+', 'plus_').split('\n')[0]
     print(personne)
 
     # messages = driver.find_elements(By.XPATH, "//ul[@aria-label='Contenu de la conversation']/li[@data-tid='chat-pane-item']//p")

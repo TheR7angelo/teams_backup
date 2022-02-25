@@ -8,7 +8,6 @@ from PySide6.QtWidgets import QApplication, QMainWindow
 
 from Interface.mainWindow import Ui_MainWindow
 
-from Module.Widget.SliderToggle import PyToggle
 from Interface import icon_rc
 
 from worker import Worker
