@@ -10,6 +10,7 @@ from Interface.mainWindow import Ui_MainWindow
 
 from Interface import icon_rc
 
+from fonction import get_liste_conversation
 from worker import Worker
 
 
@@ -17,9 +18,14 @@ class mainWindow(QMainWindow, Ui_MainWindow):
 
     titre = 'TeamShit'
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, groupes=None):
         super(mainWindow, self).__init__(parent)
+
+        self.groupes = groupes
+
         self.setupUi(self)
+
+        print(self.groupes)
 
         self.setup()
         self.setup_programme()
@@ -56,10 +62,18 @@ class mainWindow(QMainWindow, Ui_MainWindow):
 
         self.limit_date_active.stateChanged.connect(lambda: self.limit_date.setEnabled(self.limit_date_active.isChecked()))
 
-        self.but_valide_export.clicked.connect(self.export)
+        self.getlist()
 
     def setup_connection_button(self):
-        pass
+        self.but_valide_export.clicked.connect(self.export)
+
+    def getlist(self):
+        lister = Worker(fonction='lister')
+        lister.signals.liste.connect(self.print_liste)
+        self.threadpool.start(lister)
+
+    def print_liste(self, liste):
+        print(liste)
 
     def export(self):
 
@@ -85,7 +99,7 @@ if __name__ == '__main__':
     translator.load("qtbase_" + locale, reptrad)  # qtbase_fr.qm
     app.installTranslator(translator)
 
-    window = mainWindow()
+    window = mainWindow(groupes=get_liste_conversation())
     splash.finish(window)
     window.show()
     sys.exit(app.exec())

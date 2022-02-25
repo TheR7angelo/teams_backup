@@ -3,6 +3,20 @@ import datetime
 
 from PySide6.QtCore import QObject, Signal, QRunnable
 
+import datetime
+
+import sqlite3
+import time
+
+import selenium.webdriver
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.by import By
+from selenium.common.exceptions import StaleElementReferenceException
+
+from fonction import *
+
 
 class WorkerSignals(QObject):
     start = Signal(bool)
