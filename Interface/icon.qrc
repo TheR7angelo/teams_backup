@@ -1,0 +1,7 @@
+<RCC>
+  <qresource prefix="logo">
+    <file>asset/logo/TeamShit.svg</file>
+    <file>asset/logo/TeamShit.ico</file>
+    <file>asset/logo/TeamShit.png</file>
+  </qresource>
+</RCC>

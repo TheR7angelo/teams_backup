@@ -4,7 +4,7 @@ from PySide6.QtWidgets import QCheckBox
 
 
 class PyToggle(QCheckBox):
-    def __init__(self,
+    def __init__(self, _=None,
                  witdh=60,
                  height=28,
                  bg_color='#777',
@@ -75,19 +75,13 @@ class PyToggle(QCheckBox):
         if not self.isChecked():
             # DRAW BG
             p.setBrush(QColor(self._bg_color))
-            p.drawRoundedRect(0, 0, rect.width(), self.height(), self.height() / 2, self.height() / 2)
-
-            # DRAW CIRCLE
-            p.setBrush(QColor(self._circle_color))
-            p.drawEllipse(self._circle_position, 3, 22, 22)
         else:
             # DRAW BG
             p.setBrush(QColor(self._active_color))
-            p.drawRoundedRect(0, 0, rect.width(), self.height(), self.height() / 2, self.height() / 2)
+        p.drawRoundedRect(0, 0, rect.width(), self.height(), self.height() / 2, self.height() / 2)
 
-            # DRAW CIRCLE
-            p.setBrush(QColor(self._circle_color))
-            p.drawEllipse(self._circle_position, 3, 22, 22)
-
+        # DRAW CIRCLE
+        p.setBrush(QColor(self._circle_color))
+        p.drawEllipse(self._circle_position, 3, 22, 22)
         # END DRAW
         p.end()
